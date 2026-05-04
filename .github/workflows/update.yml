@@ -1,0 +1,32 @@
+name: Update Data
+
+on:
+  schedule:
+    - cron: '0 15 * * *' # 每天下午 11 點更新 (UTC+8)
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install pandas requests
+
+      - name: Run data update
+        run: python process_data.py
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/history.json
+          git commit -m "Update daily price and 20y history data" || exit 0
+          git push
