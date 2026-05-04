@@ -32,7 +32,7 @@ async function initChart() {
 
     try {
         // 抓取 history.json
-        const response = await fetch('../data/history.json');
+        const response = await fetch('data/history.json');
         if (!response.ok) throw new Error('無法讀取 history.json');
         
         const data = await response.json();
