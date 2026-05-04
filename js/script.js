@@ -36,7 +36,7 @@ function renderStockInfo(data) {
             <div class="stock-item mb-3 pb-2 border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="fw-bold">${stock.name} (${stock.symbol})</span>
-                    <span class="h5 mb-0 fw-bold">${stock.price.toLocaleString()}</span>
+                    <span class="h5 mb-0 fw-bold text-primary"><span class="small me-1"><i class="bi bi-currency-dollar"></i></span>${stock.price.toLocaleString()}</span>
                 </div>
             </div>
         `;
