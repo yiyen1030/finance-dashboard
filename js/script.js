@@ -1,6 +1,6 @@
 /**
  * 股市儀表板主程式
- * 完整版：整合每日股價與歷年走勢圖 (Chart.js)
+ * 完整版：整合每日股價與雙線歷史趨勢圖 (TSM & ETF)
  */
 
 document.addEventListener('DOMContentLoaded', updateDashboard);
@@ -49,52 +49,71 @@ function renderStockInfo(data) {
     stockDiv.innerHTML = htmlContent;
 }
 
-/**
- * 畫圖表的函式
- */
-let myChart = null; // 用來存放圖表實例
+let myChart = null; 
 function renderChart(historyData) {
     const ctx = document.getElementById('myChart');
     if (!ctx) return;
 
-    // 如果已經有圖表，先銷毀才能畫新的
     if (myChart) {
         myChart.destroy();
     }
 
-    // 這裡假設 history.json 的結構包含 date 和 price 陣列
+    // 將 Unix Timestamp (秒) 轉換為日期格式 (YYYY/MM)
+    const formattedLabels = historyData.labels.map(ts => {
+        const date = new Date(ts * 1000);
+        return `${date.getFullYear()}/${date.getMonth() + 1}`;
+    });
+
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: historyData.date, // X 軸標籤
-            datasets: [{
-                label: '歷史股價',
-                data: historyData.price, // Y 軸數值
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderWidth: 2,
-                pointRadius: 0, // 隱藏點點，線條會比較乾淨
-                fill: true,
-                tension: 0.1
-            }]
+            labels: formattedLabels,
+            datasets: [
+                {
+                    label: '台積電 (TSM)',
+                    data: historyData.tsm,
+                    borderColor: '#ff6384',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    yAxisID: 'y', // 使用左側 Y 軸
+                },
+                {
+                    label: '0050 ETF',
+                    data: historyData.etf,
+                    borderColor: '#36a2eb',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    yAxisID: 'y1', // 使用右側 Y 軸 (因為股價落差大，分開看比較清楚)
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             scales: {
                 x: {
-                    ticks: {
-                        maxTicksLimit: 10 // 限制 X 軸標籤數量，避免太擠
-                    }
+                    ticks: { maxTicksLimit: 12 }
                 },
                 y: {
-                    beginAtZero: false // 股價圖表不從 0 開始比較好觀察波動
-                }
-            },
-            plugins: {
-                legend: {
+                    type: 'linear',
                     display: true,
-                    position: 'top'
+                    position: 'left',
+                    title: { display: true, text: '台積電股價' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false }, // 避免兩組網格線重疊太亂
+                    title: { display: true, text: '0050 股價' }
                 }
             }
         }
