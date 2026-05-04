@@ -1,6 +1,6 @@
 /**
  * 股市儀表板主程式
- * 修正版：支援多支股票列表顯示
+ * 完整版：整合每日股價與歷年走勢圖 (Chart.js)
  */
 
 document.addEventListener('DOMContentLoaded', updateDashboard);
@@ -30,9 +30,7 @@ function renderStockInfo(data) {
     const stockDiv = document.getElementById('stock');
     if (!stockDiv || !data.stocks) return;
 
-    // 清空舊內容並根據 stocks 列表產生 HTML
     let htmlContent = '';
-    
     data.stocks.forEach(stock => {
         htmlContent += `
             <div class="stock-item mb-3 pb-2 border-bottom">
@@ -40,22 +38,65 @@ function renderStockInfo(data) {
                     <span class="fw-bold">${stock.name} (${stock.symbol})</span>
                     <span class="h5 mb-0 fw-bold">${stock.price.toLocaleString()}</span>
                 </div>
-                </div>
+            </div>
         `;
     });
-
-    // 加入更新時間
     htmlContent += `
         <div class="text-end mt-2">
             <small class="text-muted">資料時間：${data.time || '---'}</small>
         </div>
     `;
-
     stockDiv.innerHTML = htmlContent;
 }
 
-// 保留你原本的圖表邏輯
+/**
+ * 畫圖表的函式
+ */
+let myChart = null; // 用來存放圖表實例
 function renderChart(historyData) {
-    console.log("歷史數據已載入", historyData);
-    // 這裡放入你原本畫 Chart.js 的程式碼
+    const ctx = document.getElementById('myChart');
+    if (!ctx) return;
+
+    // 如果已經有圖表，先銷毀才能畫新的
+    if (myChart) {
+        myChart.destroy();
+    }
+
+    // 這裡假設 history.json 的結構包含 date 和 price 陣列
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: historyData.date, // X 軸標籤
+            datasets: [{
+                label: '歷史股價',
+                data: historyData.price, // Y 軸數值
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderWidth: 2,
+                pointRadius: 0, // 隱藏點點，線條會比較乾淨
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    ticks: {
+                        maxTicksLimit: 10 // 限制 X 軸標籤數量，避免太擠
+                    }
+                },
+                y: {
+                    beginAtZero: false // 股價圖表不從 0 開始比較好觀察波動
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        }
+    });
 }
