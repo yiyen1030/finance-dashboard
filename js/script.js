@@ -51,7 +51,7 @@ function renderStockInfo(data) {
 
 let myChart = null; 
 function renderChart(historyData) {
-    const ctx = document.getElementById('myChart');
+    const ctx = document.getElementById('stockChart');
     if (!ctx) return;
 
     if (myChart) {
