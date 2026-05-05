@@ -48,8 +48,8 @@ async function updateDashboard() {
                 html += `
                     <div class="stock-item mb-2 pb-2 border-bottom">
                         <div class="d-flex justify-content-between">
-                            <span>${s.name}</span>
-                            <span class="fw-bold text-primary">${s.price}</span>
+                            <span class="fw-bold">${s.name} (${s.symbol})</span>
+                            <span class="h5 mb-0 fw-bold text-primary"><span class="small"><i class="bi bi-currency-dollar"></i></span>${s.price.toLocaleString()}</span>
                         </div>
                     </div>`;
             });
