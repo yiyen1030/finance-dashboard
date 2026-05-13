@@ -2,7 +2,7 @@ name: Update Data
 
 on:
   schedule:
-    - cron: '0 15 * * *' # 每天下午 11 點更新 (UTC+8)
+    - cron: '30 5 * * *' # 每天下午 1:30 更新 (UTC+8)
   workflow_dispatch:
 
 jobs:
