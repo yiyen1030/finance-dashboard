@@ -53,7 +53,23 @@ async function updateDashboard() {
                         </div>
                     </div>`;
             });
-            if (stockDiv) stockDiv.innerHTML = html + `<small class="text-muted">更新：${data.time}</small>`;
+            // 切換為台灣時間
+            const utcDateString = data.time;
+            // 1. 將字串轉換為 Date 物件（加上 "Z" 代表這是 UTC 時間）
+            const date = new Date(utcDateString + " Z");
+            // 2. 轉換為台灣時間格式（Asia/Taipei）
+            const twTime = date.toLocaleString("zh-TW", {
+                timeZone: "Asia/Taipei",
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false // 使用 24 小時制
+            });
+
+            if (stockDiv) stockDiv.innerHTML = html + `<small class="text-muted">更新：${twTime}</small>`;
         }
     } catch (e) {
         if (stockDiv) stockDiv.innerHTML = "股價資料讀取失敗";
