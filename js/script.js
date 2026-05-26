@@ -84,17 +84,28 @@ async function updateDashboard() {
     }
 
     try {
-        const res = await fetch('./data/history.json');
-        if (res.ok) {
-            const historyData = await res.json();
-            renderChart(historyData);
+        //--- 原本的
+        // const res = await fetch('./data/history.json');
+        // if (res.ok) {
+        //     const historyData = await res.json();
+        //     renderChart(historyData);
+        // }
+        //--- 改讀取兩個 data
+        const [resHistory, resWishlist] = await Promise.all([
+            fetch('./data/history.json'),
+            fetch('./data/wishlist.json')
+        ]);
+        if (resHistory.ok && resWishlist.ok) {
+            const historyData = await resHistory.json();
+            const wishlist = await resWishlist.json();
+            renderChart(historyData, wishlist);
         }
     } catch (e) {
         console.error("圖表資料讀取失敗");
     }
 }
 
-function renderChart(historyData) {
+function renderChart(historyData, wishlist) {
     const ctx = document.getElementById('stockChart');
     if (!ctx || !historyData.labels) return;
 
@@ -113,8 +124,9 @@ function renderChart(historyData) {
         .filter(k => k !== 'labels' && k !== 'data')
         .map((sym, i) => {
             const is0050 = sym === '0050.TW';
+            const stockName = wishlist && wishlist[sym] ? wishlist[sym] : sym;
             return {
-                label: sym, 
+                label: stockName, 
                 data: source[sym],
                 borderColor: is0050 ? '#36a2eb' : colors[i % colors.length],
                 borderWidth: 2,
