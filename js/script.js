@@ -124,7 +124,7 @@ function renderChart(historyData, wishlist) {
         .filter(k => k !== 'labels' && k !== 'data')
         .map((sym, i) => {
             const is0050 = sym === '0050.TW';
-            const stockName = wishlist && wishlist[sym] ? wishlist[sym] : sym;
+            const stockName = wishlist && wishlist.symbols && wishlist.symbols[sym] ? wishlist.symbols[sym] : sym;
             return {
                 label: stockName, 
                 data: source[sym],
