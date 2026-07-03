@@ -4,7 +4,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. 先確保載入最新的 wishlist
     await loadWishlist();
-    
+
     // 2. 載入完成後再更新儀表板與圖表
     updateDashboard();
 
@@ -20,11 +20,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    document.querySelectorAll('#rangeButtons button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#rangeButtons button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderChart(btn.dataset.range);
+        });
+    });
 });
 
 // 預設值
 let wishlist = ["2330.TW", "0050.TW"];
 let myChart = null;
+let currentRange = 'year';
+let historyMonthly = null;
+let historyDaily = null;
+let wishlistData = null;
 
 async function loadWishlist() {
     try {
@@ -84,39 +96,61 @@ async function updateDashboard() {
     }
 
     try {
-        //--- 原本的
-        // const res = await fetch('./data/history.json');
-        // if (res.ok) {
-        //     const historyData = await res.json();
-        //     renderChart(historyData);
-        // }
-        //--- 改讀取兩個 data
-        const [resHistory, resWishlist] = await Promise.all([
+        // 年線 (月線) + 近期日線 (供近1週/近1個月切換) + wishlist 名稱對照
+        const [resHistory, resDaily, resWishlist] = await Promise.all([
             fetch('./data/history.json'),
+            fetch('./data/history_daily.json'),
             fetch('./data/wishlist.json')
         ]);
         if (resHistory.ok && resWishlist.ok) {
-            const historyData = await resHistory.json();
-            const wishlist = await resWishlist.json();
-            renderChart(historyData, wishlist);
+            historyMonthly = await resHistory.json();
+            wishlistData = await resWishlist.json();
+            historyDaily = resDaily.ok ? await resDaily.json() : null;
+            renderChart(currentRange);
         }
     } catch (e) {
         console.error("圖表資料讀取失敗");
     }
 }
 
-function renderChart(historyData, wishlist) {
+// 依切換區間 (week/month/year) 取出對應的 labels/data
+function getRangeData(range) {
+    if (range === 'week' || range === 'month') {
+        if (!historyDaily || !historyDaily.labels || historyDaily.labels.length === 0) return null;
+
+        const lastTs = historyDaily.labels[historyDaily.labels.length - 1];
+        const cutoff = lastTs - (range === 'week' ? 7 : 30) * 86400;
+
+        const indices = historyDaily.labels
+            .map((ts, i) => i)
+            .filter(i => historyDaily.labels[i] >= cutoff);
+
+        const data = {};
+        Object.keys(historyDaily.data || {}).forEach(sym => {
+            data[sym] = indices.map(i => historyDaily.data[sym][i]);
+        });
+
+        return { labels: indices.map(i => historyDaily.labels[i]), data, isDaily: true };
+    }
+
+    if (!historyMonthly || !historyMonthly.labels) return null;
+    return { labels: historyMonthly.labels, data: historyMonthly.data || historyMonthly, isDaily: false };
+}
+
+function renderChart(range) {
+    currentRange = range;
     const ctx = document.getElementById('stockChart');
-    if (!ctx || !historyData.labels) return;
+    const rangeData = getRangeData(range);
+    if (!ctx || !rangeData) return;
 
     if (myChart) myChart.destroy();
 
-    const labels = historyData.labels.map(ts => {
+    const labels = rangeData.labels.map(ts => {
         const d = new Date(ts * 1000);
-        return `${d.getFullYear()}/${d.getMonth() + 1}`;
+        return rangeData.isDaily ? `${d.getMonth() + 1}/${d.getDate()}` : `${d.getFullYear()}/${d.getMonth() + 1}`;
     });
 
-    const source = historyData.data || historyData;
+    const source = rangeData.data;
     const colors = ['#ff6384', '#4bc0c2', '#ff9f40', '#9966ff', '#ffcd56', '#c9cbcf'];
 
     // 這裡的邏輯不需要改，因為 history.json 的 Key 永遠是股票代號 (Symbol)
@@ -124,9 +158,9 @@ function renderChart(historyData, wishlist) {
         .filter(k => k !== 'labels' && k !== 'data')
         .map((sym, i) => {
             const is0050 = sym === '0050.TW';
-            const stockName = wishlist && wishlist.symbols && wishlist.symbols[sym] ? wishlist.symbols[sym] : sym;
+            const stockName = wishlistData && wishlistData.symbols && wishlistData.symbols[sym] ? wishlistData.symbols[sym] : sym;
             return {
-                label: stockName, 
+                label: stockName,
                 data: source[sym],
                 borderColor: is0050 ? '#36a2eb' : colors[i % colors.length],
                 borderWidth: 2,

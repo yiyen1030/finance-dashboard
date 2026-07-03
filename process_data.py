@@ -6,24 +6,46 @@ import os
 
 def get_hist(symbol):
     """
-    從 Yahoo Finance 抓取歷史股價
+    從 Yahoo Finance 抓取歷史股價 (月線，供年線圖使用)
     """
     start_ts = 1388534400  # 2014-01-01
     end_ts = int(datetime.now().timestamp())
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?period1={start_ts}&period2={end_ts}&interval=1mo"
     headers = {'User-Agent': 'Mozilla/5.0'}
-    
+
     try:
         r = requests.get(url, headers=headers).json()
         result = r['chart']['result'][0]
         dates = result['timestamp']
         prices = result['indicators']['quote'][0]['close']
-        
+
         df = pd.DataFrame({'timestamp': dates, symbol: prices})
         df[symbol] = pd.to_numeric(df[symbol], errors='coerce')
         return df
     except Exception as e:
         print(f"抓取 {symbol} 失敗: {e}")
+        return pd.DataFrame(columns=['timestamp'])
+
+def get_hist_daily(symbol, days=35):
+    """
+    從 Yahoo Finance 抓取近期每日股價 (供近1週/近1個月切換圖使用)
+    """
+    end_ts = int(datetime.now().timestamp())
+    start_ts = end_ts - days * 86400
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?period1={start_ts}&period2={end_ts}&interval=1d"
+    headers = {'User-Agent': 'Mozilla/5.0'}
+
+    try:
+        r = requests.get(url, headers=headers).json()
+        result = r['chart']['result'][0]
+        dates = result['timestamp']
+        prices = result['indicators']['quote'][0]['close']
+
+        df = pd.DataFrame({'timestamp': dates, symbol: prices})
+        df[symbol] = pd.to_numeric(df[symbol], errors='coerce')
+        return df
+    except Exception as e:
+        print(f"抓取 {symbol} 近期日線失敗: {e}")
         return pd.DataFrame(columns=['timestamp'])
 
 # --- 1. 讀取心願清單 (支援字典格式) ---
@@ -106,3 +128,33 @@ if dfs:
     print(f"更新成功！共處理 {len(stocks_current)} 支股票。")
 else:
     print("沒有抓取到任何資料。")
+
+# --- 5. 抓取近期日線資料 (供近1週/近1個月切換圖使用) ---
+dfs_daily = []
+for sym in symbols:
+    df_d = get_hist_daily(sym)
+    if not df_d.empty:
+        dfs_daily.append(df_d)
+
+if dfs_daily:
+    df_daily_final = dfs_daily[0]
+    for i in range(1, len(dfs_daily)):
+        df_daily_final = pd.merge(df_daily_final, dfs_daily[i], on='timestamp', how='outer')
+
+    df_daily_final = df_daily_final.sort_values('timestamp')
+
+    output_history_daily = {
+        "labels": df_daily_final['timestamp'].tolist(),
+        "data": {
+            sym: [None if pd.isna(x) else x for x in df_daily_final[sym].tolist()]
+            for sym in symbols if sym in df_daily_final.columns
+        }
+    }
+
+    os.makedirs('data', exist_ok=True)
+    with open('data/history_daily.json', 'w', encoding='utf-8') as f:
+        json.dump(output_history_daily, f, ensure_ascii=False)
+
+    print(f"近期日線更新成功！共處理 {len(dfs_daily)} 支股票。")
+else:
+    print("沒有抓取到近期日線資料。")

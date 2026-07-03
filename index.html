@@ -36,7 +36,14 @@
       <div class="col-12 col-lg-8">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body">
-            <h2 class="h6 text-muted mb-3">歷年走勢圖</h2>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h6 text-muted m-0">歷年走勢圖</h2>
+              <div class="btn-group btn-group-sm" role="group" id="rangeButtons">
+                <button type="button" class="btn btn-outline-secondary" data-range="week">近1週</button>
+                <button type="button" class="btn btn-outline-secondary" data-range="month">近1個月</button>
+                <button type="button" class="btn btn-outline-secondary active" data-range="year">年線</button>
+              </div>
+            </div>
             <canvas id="stockChart" height="120"></canvas>
           </div>
         </div>

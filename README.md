@@ -11,7 +11,8 @@
 - `/data`:
   - `wishlist.json`: 追蹤代號清單。
   - `data.json`: 每日最新股價資料。
-  - `history.json`: 歷史價格趨勢數據。
+  - `history.json`: 歷史價格趨勢數據（月線，供「年線」圖使用）。
+  - `history_daily.json`: 近 35 天每日股價（供「近1週」/「近1個月」切換圖使用）。
 - `/js`:
   - `script.js`: 核心渲染邏輯，負責處理資料與繪製圖表。
 - `process_data.py`: 資料抓取腳本，讀取 wishlist 並產出 JSON 檔案。
