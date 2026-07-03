@@ -185,7 +185,8 @@ function renderChart(range) {
                 y1: {
                     type: 'linear', display: true, position: 'right',
                     title: { display: true, text: '0050 專用 (右側)' },
-                    grid: { drawOnChartArea: false }
+                    grid: { drawOnChartArea: false },
+                    beginAtZero: true
                 }
             }
         }
